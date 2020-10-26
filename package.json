@@ -20,6 +20,7 @@
   },
   "homepage": "https://github.com/open-orchard/koinos-miner#readme",
   "dependencies": {
+    "axios": "^0.21.0",
     "commander": "^6.0.0",
     "readline-sync": "^1.4.10",
     "web3": "^1.2.11"
