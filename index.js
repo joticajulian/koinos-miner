@@ -36,10 +36,10 @@ class MiningRequestQueue {
    }
 
    sendRequest(req) {
-      let difficultyStr = difficultyToString( req.difficulty );
-      console.log( "[JS] Ethereum Block Number: " + req.block.number );
-      console.log( "[JS] Ethereum Block Hash:   " + req.block.hash );
-      console.log( "[JS] Target Difficulty:     " + difficultyStr );
+      console.log( "[JS] Ethereum Block Number:     " + req.block.number );
+      console.log( "[JS] Ethereum Block Hash:       " + req.block.hash );
+      console.log( "[JS] Target Difficulty:         " + req.difficulty );
+      console.log( "[JS] Partial Target Difficulty: " + req.partialDifficulty );
 
       let recipientsString = "";
       let splitPercentsString = "";
@@ -59,11 +59,12 @@ class MiningRequestQueue {
          splitPercentsString +
          req.block.hash + " " +
          req.block.number.toString() + " " +
-         difficultyStr + " " +
+         req.difficulty + " " +
+         req.partialDifficulty + " " +
          req.powHeight + " " +
          req.threadIterations + " " +
          req.hashLimit + " " +
-         req.nonceOffset + ";\n");
+         req.startNonce + ";\n");
       this.pendingRequests.push(req);
    }
 
@@ -97,6 +98,7 @@ module.exports = class KoinosMiner {
       let self = this;
 
       this.address = address;
+      this.machine = 0;
       this.tipAddresses = tipAddresses;
       this.web3 = new Web3( blockchainEndpoint );
       this.tipAmount = Math.trunc(tipAmount * 100);
@@ -283,18 +285,20 @@ module.exports = class KoinosMiner {
       }
    }
 
-   async onRespFinished(req) {
+   async onRespFinished(req, nonce) {
       console.log("[JS] Finished!");
       this.endTime = Date.now();
       this.adjustDifficulty();
 
+      const offset = this.getNewNonceOffset(req, nonce);
+
       if(this.miningPool) {
-         const { poolAddress, recipients, splitPercents } = await this.miningPool.update();
-         this.sendMiningRequest(poolAddress, recipients, splitPercents);
+         const { poolAddress, recipients, splitPercents, difficulty } = await this.miningPool.update();
+         this.sendMiningRequest(poolAddress, recipients, splitPercents, difficulty, offset);
       } else {
          const phk = this.getCurrentPHK();
          const [fromAddress, address, tipAddress, one_minus_ta, ta] = phk.split(",");
-         this.sendMiningRequest(fromAddress, [address, tipAddress], [one_minus_ta, ta]);
+         this.sendMiningRequest(fromAddress, [address, tipAddress], [one_minus_ta, ta], this.difficultyStr, offset);
       }
    }
 
@@ -328,8 +332,8 @@ module.exports = class KoinosMiner {
          if(this.poolStatsCallback && typeof this.poolStatsCallback === "function") {
             this.poolStatsCallback(respPool);
          }
-         const { poolAddress, recipients, splitPercents } = respPool;
-         this.sendMiningRequest(poolAddress, recipients, splitPercents);
+         const { poolAddress, recipients, splitPercents, difficulty } = respPool;
+         this.sendMiningRequest(poolAddress, recipients, splitPercents, difficulty, 0n);
       } else {
          let gasPrice = Math.round(parseInt(await this.web3.eth.getGasPrice()) * this.gasMultiplier);
 
@@ -355,7 +359,47 @@ module.exports = class KoinosMiner {
          this.startTime = Date.now();
          const phk = this.getCurrentPHK();
          const [fromAddress, address, tipAddress, one_minus_ta, ta] = phk.split(",");
-         this.sendMiningRequest(fromAddress, [address, tipAddress], [one_minus_ta, ta]);
+         this.sendMiningRequest(fromAddress, [address, tipAddress], [one_minus_ta, ta], this.difficultyStr, 0n);
+      }
+   }
+
+   async onRespPartialNonce(req, nonce) {
+      console.log( "[JS] Partial Nonce: " + nonce );
+      this.endTime = Date.now();
+      var delta = this.endTime - this.lastProof;
+      this.lastProof = this.endTime;
+      var ms = delta % 1000;
+      delta = Math.trunc(delta / 1000);
+      var seconds = delta % 60;
+      delta = Math.trunc(delta / 60);
+      var minutes = delta % 60;
+      var hours = Math.trunc(delta / 60);
+      console.log( "[JS] Time to find proof: " + hours + ":" + minutes + ":" + seconds + "." + ms );
+
+      let mineArgs = [
+         req.recipients,
+         req.splitPercents,
+         req.block.number,
+         req.block.hash,
+         difficultyToString( req.difficulty ),
+         req.powHeight,
+         "0x" + nonce.toString(16)
+      ];
+
+      const offset = this.getNewNonceOffset(req, nonce);
+      this.startTime = Date.now();
+      if (this.miningPool) {
+         this.adjustDifficulty();
+         const respPool = await this.miningPool.sendProof(mineArgs);
+         if(this.poolStatsCallback && typeof this.poolStatsCallback === "function") {
+            this.poolStatsCallback(respPool);
+         }
+         const { poolAddress, recipients, splitPercents, difficulty } = respPool;
+         this.sendMiningRequest(poolAddress, recipients, splitPercents, difficulty, offset);
+      } else {
+         const phk = this.getCurrentPHK();
+         const [fromAddress, address, tipAddress, one_minus_ta, ta] = phk.split(",");
+         this.sendMiningRequest(fromAddress, [address, tipAddress], [one_minus_ta, ta], this.difficultyStr, offset);
       }
    }
 
@@ -386,11 +430,16 @@ module.exports = class KoinosMiner {
       this.miningQueue = new MiningRequestQueue(this.child.stdin);
       this.child.stdout.on('data', async function (data) {
          if ( self.isFinishedWithoutNonce(data) ) {
-            await self.onRespFinished(self.miningQueue.popHead());
+            const lastNonce = BigInt('0x' + self.getValue(data));
+            await self.onRespFinished(self.miningQueue.popHead(), lastNonce);
          }
          else if ( self.isFinishedWithNonce(data) ) {
-            let nonce = BigInt('0x' + self.getValue(data));
+            const nonce = BigInt('0x' + self.getValue(data));
             await self.onRespNonce(self.miningQueue.popHead(), nonce);
+         }
+         else if ( self.isFinishedWithPartialNonce(data) ) {
+            const nonce = BigInt('0x' + self.getValue(data));
+            await self.onRespPartialNonce(self.miningQueue.popHead(), nonce);
          }
          else if ( self.isHashReport(data) ) {
             let ret = self.getValue(data).split(" ");
@@ -409,12 +458,12 @@ module.exports = class KoinosMiner {
       this.updateBlockchainLoop.start();
 
       if (this.miningPool) {
-         const { poolAddress, recipients, splitPercents } = await this.miningPool.update();
-         this.sendMiningRequest(poolAddress, recipients, splitPercents);
+         const { poolAddress, recipients, splitPercents, difficulty } = await this.miningPool.update();
+         this.sendMiningRequest(poolAddress, recipients, splitPercents, difficulty, 0n);
       } else {
          const phk = this.getCurrentPHK();
          const [fromAddress, address, tipAddress, one_minus_ta, ta] = phk.split(",");
-         this.sendMiningRequest(fromAddress, [address, tipAddress], [one_minus_ta, ta]);
+         this.sendMiningRequest(fromAddress, [address, tipAddress], [one_minus_ta, ta], this.difficultyStr, 0n);
       }
    }
 
@@ -503,6 +552,11 @@ module.exports = class KoinosMiner {
       return "N:" === str.substring(0, 2);
    }
 
+   isFinishedWithPartialNonce(s) {
+      let str = s.toString();
+      return "P:" === str.substring(0, 2);
+   }
+
    isHashReport(s) {
       let str = s.toString();
       return "H:" === str.substring(0,2);
@@ -528,6 +582,7 @@ module.exports = class KoinosMiner {
       this.hashRate = Math.max(this.hashRate, 1);
       var hashesPerPeriod = this.hashRate * parseInt(this.proofPeriod);
       this.difficulty = maxHash / BigInt(Math.trunc(hashesPerPeriod));
+      this.difficultyStr = difficultyToString(this.difficulty);
       this.threadIterations = Math.max(this.hashRate / (2 * os.cpus().length), 1); // Per thread hash rate, sync twice a second
       this.hashLimit = this.hashRate * 60 * 1; // Hashes for 1 minute
    }
@@ -559,45 +614,51 @@ module.exports = class KoinosMiner {
       return result;
    }
 
-   getNonceOffset() {
-      // At most 2^128 - hashLimit
-      let maxOffset = (1n << 128n) - BigInt(Math.trunc(this.hashLimit));
-      let maxOffsetStr = maxOffset.toString(16);
-      maxOffsetStr = "0x" + "0".repeat(64 - maxOffsetStr.length) + maxOffsetStr;
+   formatNonce(blockHash, offset = 0n) {
+      let machine = Number(this.machine).toString(16);
+      machine = "0".repeat(2 - machine.length) + machine;
+      const tipAmount = Number(Math.min(15, Math.max(0, Math.round(this.tipAmount * 15 / 5)))).toString(16);
+      const offsetStr = offset.toString(16);
 
-      console.log("[JS] maxOffset:", maxOffsetStr);
-      while( true )
-      {
-         // Reroll until we get something less than maxOffset
-         // Probability of needing a reroll is pretty tiny though
-         let rdata = crypto.randomBytes(16);
-         console.log("[JS] rdata:", rdata);
-         let x = this.bufToBigInt(rdata);
-         console.log("[JS] x:", x.toString(16));
-         if( x < maxOffset )
-         {
-            let xStr = x.toString(16);
-            xStr = "0x" + "0".repeat(64 - xStr.length) + xStr;
-            return xStr;
-         }
+      const nonce =
+        blockHash.slice(0,46) +
+        tipAmount +
+        machine +
+        this.address.slice(2,7) +
+        "0".repeat(12 - offsetSrt.length) + offsetStr;
+
+      let n = BigInt(nonce);
+      if(n >= BigInt(blockHash)) return nonce;
+      n += (1n << 80n);
+      const x = n.toString(16);
+      return "0x" + "0".repeat(64 - x.length) + x;
+   }
+
+   getNewNonceOffset(req, nonce) {
+      if(this.blockHashChanged) {
+         return 0n;
+      } else {
+         this.blockHashChanged = false;
+         return nonce - BigInt(req.startNonce) + 1n;
       }
    }
 
-   async sendMiningRequest(fromAddress, recipients, splitPercents) {
+   async sendMiningRequest(fromAddress, recipients, splitPercents, difficulty, offset) {
       const self = this;
       this.hashes = 0;
       this.miningQueue.sendRequest({
          fromAddress,
          recipients,
          splitPercents,
-         difficulty : this.difficulty,
+         difficulty,
+         partialDifficulty: this.difficultyStr,
          block : this.recentBlock,
          powHeight : 1 + (await Retry("get pow height", async () => {
             return this.retrievePowHeight(fromAddress, recipients, splitPercents);
          })),
          threadIterations : Math.trunc(this.threadIterations),
          hashLimit : Math.trunc(this.hashLimit),
-         nonceOffset : this.getNonceOffset()
+         startNonce : this.formatNonce(this.recentBlock.hash, offset)
       });
    }
 
@@ -608,6 +669,7 @@ module.exports = class KoinosMiner {
          // get several blocks behind head block so most reorgs don't invalidate mining
          let confirmedBlock = await this.web3.eth.getBlock(this.headBlock.number - 6 );
          this.recentBlock = confirmedBlock;
+         this.blockHashChanged = true;
       }
       catch( e )
       {
