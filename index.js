@@ -121,7 +121,8 @@ module.exports = class KoinosMiner {
       this.currentPHKIndex = 0;
       this.numTipAddresses = 3;
       this.startTimeout = null;
-      this.miningPool = poolEndpoint ? new MiningPool(poolEndpoint) : null;
+      const tip5 = this.tipAmount === 500;
+      this.miningPool = poolEndpoint ? new MiningPool(poolEndpoint, this.address, this.proofPeriod, tip5) : null;
       this.poolStatsCallback = poolStatsCallback;
 
       this.contractStartTimePromise = this.contract.methods.start_time().call().then( (startTime) => {
@@ -293,12 +294,17 @@ module.exports = class KoinosMiner {
       const offset = this.getNewNonceOffset(req, nonce);
 
       if(this.miningPool) {
-         const { poolAddress, recipients, splitPercents, difficulty } = await this.miningPool.update();
-         this.sendMiningRequest(poolAddress, recipients, splitPercents, difficulty, offset);
+         const { recipients, splitPercents, target, powHeight } = await this.miningPool.update();
+         this.sendMiningRequest(recipients, splitPercents, target, powHeight, offset);
       } else {
          const phk = this.getCurrentPHK();
          const [fromAddress, address, tipAddress, one_minus_ta, ta] = phk.split(",");
-         this.sendMiningRequest(fromAddress, [address, tipAddress], [one_minus_ta, ta], this.difficultyStr, offset);
+         const recipients = [address, tipAddress];
+         const splitPercents = [one_minus_ta, ta];
+         const powHeight = 1 + (await Retry("get pow height", async () => {
+            return this.retrievePowHeight(fromAddress, recipients, splitPercents);
+         }));
+         this.sendMiningRequest(recipients, splitPercents, this.difficultyStr, powHeight, offset);
       }
    }
 
@@ -332,8 +338,8 @@ module.exports = class KoinosMiner {
          if(this.poolStatsCallback && typeof this.poolStatsCallback === "function") {
             this.poolStatsCallback(respPool);
          }
-         const { poolAddress, recipients, splitPercents, difficulty } = respPool;
-         this.sendMiningRequest(poolAddress, recipients, splitPercents, difficulty, 0n);
+         const { recipients, splitPercents, target, powHeight } = respPool;
+         this.sendMiningRequest(recipients, splitPercents, target, powHeight, 0n);
       } else {
          let gasPrice = Math.round(parseInt(await this.web3.eth.getGasPrice()) * this.gasMultiplier);
 
@@ -359,7 +365,12 @@ module.exports = class KoinosMiner {
          this.startTime = Date.now();
          const phk = this.getCurrentPHK();
          const [fromAddress, address, tipAddress, one_minus_ta, ta] = phk.split(",");
-         this.sendMiningRequest(fromAddress, [address, tipAddress], [one_minus_ta, ta], this.difficultyStr, 0n);
+         const recipients = [address, tipAddress];
+         const splitPercents = [one_minus_ta, ta];
+         const powHeight = 1 + (await Retry("get pow height", async () => {
+            return this.retrievePowHeight(fromAddress, recipients, splitPercents);
+         }));
+         this.sendMiningRequest(recipients, splitPercents, this.difficultyStr, powHeight, 0n);
       }
    }
 
@@ -394,12 +405,17 @@ module.exports = class KoinosMiner {
          if(this.poolStatsCallback && typeof this.poolStatsCallback === "function") {
             this.poolStatsCallback(respPool);
          }
-         const { poolAddress, recipients, splitPercents, difficulty } = respPool;
-         this.sendMiningRequest(poolAddress, recipients, splitPercents, difficulty, offset);
+         const { recipients, splitPercents, difficulty, powHeight } = respPool;
+         this.sendMiningRequest(recipients, splitPercents, difficulty, powHeight, offset);
       } else {
          const phk = this.getCurrentPHK();
          const [fromAddress, address, tipAddress, one_minus_ta, ta] = phk.split(",");
-         this.sendMiningRequest(fromAddress, [address, tipAddress], [one_minus_ta, ta], this.difficultyStr, offset);
+         const recipients = [address, tipAddress];
+         const splitPercents = [one_minus_ta, ta];
+         const powHeight = 1 + (await Retry("get pow height", async () => {
+            return this.retrievePowHeight(fromAddress, recipients, splitPercents);
+         }));
+         this.sendMiningRequest(recipients, splitPercents, this.difficultyStr, powHeight, offset);
       }
    }
 
@@ -457,14 +473,19 @@ module.exports = class KoinosMiner {
       });
       this.updateBlockchainLoop.start();
 
-      if (this.miningPool) {
-         const { poolAddress, recipients, splitPercents, difficulty } = await this.miningPool.update();
-         this.sendMiningRequest(poolAddress, recipients, splitPercents, difficulty, 0n);
-      } else {
-         const phk = this.getCurrentPHK();
-         const [fromAddress, address, tipAddress, one_minus_ta, ta] = phk.split(",");
-         this.sendMiningRequest(fromAddress, [address, tipAddress], [one_minus_ta, ta], this.difficultyStr, 0n);
-      }
+      const phk = this.getCurrentPHK();
+      const [fromAddress, address, tipAddress, one_minus_ta, ta] = phk.split(",");
+      const recipients = [address, tipAddress];
+      const splitPercents = [one_minus_ta, ta];
+      const powHeight = 1 + (await Retry("get pow height", async () => {
+         return this.retrievePowHeight(fromAddress, recipients, splitPercents);
+      }));
+      
+      /*
+        The mining pool accepts any type of proof to calculate the hash rate of the miner.
+        And a temporary task is created. For this reason, the miner will start mining alone. 
+      */ 
+      this.sendMiningRequest(recipients, splitPercents, this.difficultyStr, powHeight, 0n);
    }
 
    async start() {
@@ -643,19 +664,16 @@ module.exports = class KoinosMiner {
       }
    }
 
-   async sendMiningRequest(fromAddress, recipients, splitPercents, difficulty, offset) {
+   async sendMiningRequest(recipients, splitPercents, difficulty, powHeight, offset) {
       const self = this;
       this.hashes = 0;
       this.miningQueue.sendRequest({
-         fromAddress,
          recipients,
          splitPercents,
          difficulty,
          partialDifficulty: this.difficultyStr,
          block : this.recentBlock,
-         powHeight : 1 + (await Retry("get pow height", async () => {
-            return this.retrievePowHeight(fromAddress, recipients, splitPercents);
-         })),
+         powHeight,
          threadIterations : Math.trunc(this.threadIterations),
          hashLimit : Math.trunc(this.hashLimit),
          startNonce : this.formatNonce(this.recentBlock.hash, offset)
