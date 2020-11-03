@@ -24,7 +24,7 @@ module.exports = class MiningPool {
         if(this.isTokenExpired()) {
           await this.login();
         }
-        opts = { headers: authentication: `Bearer ${this.token.accessToken}`};
+        opts = { headers: { authentication: `Bearer ${this.token.accessToken}`} };
       }
       
       const id = Math.trunc(10000*Math.random());
@@ -43,7 +43,7 @@ module.exports = class MiningPool {
    }
 
    async login() {
-     this.token = await call("login", [this.miner, this.proofPeriod, this.tip], false);
+     this.token = await this.call("login", [this.miner, this.proofPeriod, this.tip], false);
    }
 
    async update() {

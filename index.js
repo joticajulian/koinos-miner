@@ -326,7 +326,7 @@ module.exports = class KoinosMiner {
          req.splitPercents,
          req.block.number,
          req.block.hash,
-         difficultyToString( req.difficulty ),
+         req.difficulty,
          req.powHeight,
          "0x" + nonce.toString(16)
       ];
@@ -484,7 +484,8 @@ module.exports = class KoinosMiner {
       /*
         The mining pool accepts any type of proof to calculate the hash rate of the miner.
         And a temporary task is created. For this reason, the miner will start mining alone. 
-      */ 
+      */
+      this.difficultyStr = difficultyToString(this.difficulty);
       this.sendMiningRequest(recipients, splitPercents, this.difficultyStr, powHeight, 0n);
    }
 
@@ -646,7 +647,7 @@ module.exports = class KoinosMiner {
         tipAmount +
         machine +
         this.address.slice(2,7) +
-        "0".repeat(12 - offsetSrt.length) + offsetStr;
+        "0".repeat(12 - offsetStr.length) + offsetStr;
 
       let n = BigInt(nonce);
       if(n >= BigInt(blockHash)) return nonce;

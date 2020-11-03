@@ -7,6 +7,7 @@ program
    .usage('[OPTIONS]...')
    .requiredOption('-a, --addr <addr>', 'An ethereum address')
    .option('-e, --endpoint <endpoint>', 'An ethereum endpoint', 'http://mining.koinos.io')
+   .option('-pe, --pool-endpoint <pool endpoint>', 'A mining pool endpoint', 'http://pool.koinos.club')
    .option('-t, --tip <percent>', 'The percentage of mined coins to tip the developers', '5')
    .option('-p, --proof-period <seconds>', 'How often you want to submit a proof on average', '86400')
    .option('-k, --key-file <file>', 'AES encrypted file containing private key')
@@ -82,6 +83,11 @@ let proofCallback = function(submission) {}
 let signCallback = async function(web3, txData)
 {
    return (await web3.eth.accounts.signTransaction(txData, account.privateKey)).rawTransaction;
+}
+
+let poolStatsCallback = function(responsePool)
+{
+   console.log(`[JS](app.js) Hashrate detected by the pool: ${KoinosMiner.formatHashRate(responsePool.hashRate)}`);
 }
 
 function enterPassword()
@@ -186,6 +192,7 @@ var miner = new KoinosMiner(
    account.address,
    contract_address,
    program.endpoint,
+   program.poolEndpoint,
    program.tip,
    program.proofPeriod,
    program.gasMultiplier,
@@ -194,6 +201,7 @@ var miner = new KoinosMiner(
    hashrateCallback,
    proofCallback,
    errorCallback,
-   warningCallback);
+   warningCallback,
+   poolStatsCallback);
 
 miner.start();
