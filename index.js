@@ -328,7 +328,7 @@ module.exports = class KoinosMiner {
          req.block.hash,
          req.difficulty,
          req.powHeight,
-         "0x" + nonce.toString(16)
+         difficultyToString(nonce),
       ];
 
       if (this.miningPool) {
@@ -392,7 +392,7 @@ module.exports = class KoinosMiner {
          req.splitPercents,
          req.block.number,
          req.block.hash,
-         difficultyToString( req.difficulty ),
+         req.difficulty,
          req.powHeight,
          "0x" + nonce.toString(16)
       ];
@@ -405,8 +405,8 @@ module.exports = class KoinosMiner {
          if(this.poolStatsCallback && typeof this.poolStatsCallback === "function") {
             this.poolStatsCallback(respPool);
          }
-         const { recipients, splitPercents, difficulty, powHeight } = respPool;
-         this.sendMiningRequest(recipients, splitPercents, difficulty, powHeight, offset);
+         const { recipients, splitPercents, target, powHeight } = respPool;
+         this.sendMiningRequest(recipients, splitPercents, target, powHeight, offset);
       } else {
          const phk = this.getCurrentPHK();
          const [fromAddress, address, tipAddress, one_minus_ta, ta] = phk.split(",");
@@ -485,6 +485,9 @@ module.exports = class KoinosMiner {
         The mining pool accepts any type of proof to calculate the hash rate of the miner.
         And a temporary task is created. For this reason, the miner will start mining alone. 
       */
+      if(this.miningPool) {
+        await this.miningPool.login();
+      }
       this.difficultyStr = difficultyToString(this.difficulty);
       this.sendMiningRequest(recipients, splitPercents, this.difficultyStr, powHeight, 0n);
    }
@@ -602,7 +605,11 @@ module.exports = class KoinosMiner {
    adjustDifficulty() {
       const maxHash = BigInt("0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"); // 2^256 - 1
       this.hashRate = Math.max(this.hashRate, 1);
-      var hashesPerPeriod = this.hashRate * parseInt(this.proofPeriod);
+      let hashesPerPeriod;
+      if(this.miningPool)
+         hashesPerPeriod = this.hashRate * parseInt(this.miningPool.miningParams.normalDt / 1000);
+      else
+         hashesPerPeriod = this.hashRate * parseInt(this.proofPeriod);
       this.difficulty = maxHash / BigInt(Math.trunc(hashesPerPeriod));
       this.difficultyStr = difficultyToString(this.difficulty);
       this.threadIterations = Math.max(this.hashRate / (2 * os.cpus().length), 1); // Per thread hash rate, sync twice a second
@@ -637,9 +644,11 @@ module.exports = class KoinosMiner {
    }
 
    formatNonce(blockHash, offset = 0n) {
-      let machine = Number(this.machine).toString(16);
+      let machine = "0";
+      if(this.miningPool && this.miningPool.machine)
+         machine = Number(this.miningPool.machine).toString(16);
       machine = "0".repeat(2 - machine.length) + machine;
-      const tipAmount = Number(Math.min(15, Math.max(0, Math.round(this.tipAmount * 15 / 5)))).toString(16);
+      const tipAmount = this.tipAmount === 500 ? "f" : "0";
       const offsetStr = offset.toString(16);
 
       const nonce =

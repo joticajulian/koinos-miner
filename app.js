@@ -15,6 +15,7 @@ program
    .option('-l, --gas-price-limit <limit>', 'The maximum amount of gas to be spent on a proof submission', '1000000000000')
    .option('--import', 'Import a private key')
    .option('--export', 'Export a private key')
+   .option('--pool', 'Use mining pool')
    .parse(process.argv);
 
 console.log(` _  __     _                   __  __ _`);
@@ -87,7 +88,8 @@ let signCallback = async function(web3, txData)
 
 let poolStatsCallback = function(responsePool)
 {
-   console.log(`[JS](app.js) Hashrate detected by the pool: ${KoinosMiner.formatHashRate(responsePool.hashRate)}`);
+   console.log(`[JS](app.js) Hashrate detected by the pool:`);// ${KoinosMiner.formatHashRate(responsePool.hashRate)}`);
+   console.log(responsePool);
 }
 
 function enterPassword()
@@ -130,7 +132,11 @@ function decrypt(cipherText, password)
    return decrypted
 }
 
-if (program.import)
+if (program.pool)
+{
+   console.log('Using mining pool: ' + program.poolEndpoint);
+}
+else if (program.import)
 {
    account = w3.eth.accounts.privateKeyToAccount(
       readlineSync.questionNewPassword('Enter private key: ', {
@@ -189,10 +195,10 @@ else
 var miner = new KoinosMiner(
    program.addr,
    tip_addresses,
-   account.address,
+   program.pool ? "0x0000000000000000000000000000000000000000" : account.address,
    contract_address,
    program.endpoint,
-   program.poolEndpoint,
+   program.pool ? program.poolEndpoint : null,
    program.tip,
    program.proofPeriod,
    program.gasMultiplier,

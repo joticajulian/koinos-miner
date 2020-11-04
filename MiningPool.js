@@ -1,3 +1,4 @@
+const jose = require("jose");
 const axios = require("axios");
 const Retry = require("./retry.js");
 
@@ -44,6 +45,10 @@ module.exports = class MiningPool {
 
    async login() {
      this.token = await this.call("login", [this.miner, this.proofPeriod, this.tip], false);
+     const payload = jose.JWT.decode(this.token.accessToken);
+     this.machine = payload.machine;
+     
+     this.miningParams = await this.call("getParams", [], false);
    }
 
    async update() {
@@ -56,8 +61,18 @@ module.exports = class MiningPool {
 
    async sendProof(mineArgs) {
      const self = this;
+     const [
+       recipients,
+       splitPercents,
+       blockNumber,
+       blockHash,
+       target,
+       powHeight,
+       nonce,
+     ] = mineArgs;
      const result = await Retry("send proof to the pool", async () => {
        return self.call("mine", mineArgs);
      }, "[Pool]");
+     return result;
    }
 }

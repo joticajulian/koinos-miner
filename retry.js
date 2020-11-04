@@ -14,7 +14,10 @@ async function retry(msg, fn, context = "[JS]") {
         }
         catch (e) {
             console.log(`${context} Error with ${msg}`);
-            console.log(e)
+            if(e.response && e.response.data)
+              console.log(e.response.data);
+            else
+              console.log(e.message);
             ++tries;
             await sleep( (0.75 + 0.25*Math.random()) * sleepTime );
             sleepTime = Math.min( sleepTime*2, MAX_SLEEP_TIME );

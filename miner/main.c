@@ -576,6 +576,8 @@ int main( int argc, char** argv )
             fprintf( stdout, "P:%s;\n", bn_str);
             fprintf(stderr, "[C] Partial Nonce: %s\n", bn_str);
          }
+         bignum_to_string( &result, bn_str, sizeof(bn_str), false );
+         fprintf(stderr, "[C] Result: %s\n", bn_str);
          fflush(stderr);
       }
 
