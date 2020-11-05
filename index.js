@@ -664,7 +664,7 @@ module.exports = class KoinosMiner {
    }
 
    getStartNonce(nonce) {
-      if(this.blockHashChanged) {
+      if(!nonce || this.blockHashChanged) {
          this.blockHashChanged = false;
          return this.formatNonce(this.recentBlock.hash);
       } else {
@@ -684,7 +684,7 @@ module.exports = class KoinosMiner {
          powHeight,
          threadIterations : Math.trunc(this.threadIterations),
          hashLimit : Math.trunc(this.hashLimit),
-         startNonce : previousNonce ? this.getStartNonce(previousNonce) : this.formatNonce(this.recentBlock.hash)
+         startNonce : this.getStartNonce(previousNonce),
       });
    }
 
