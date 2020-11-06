@@ -51,10 +51,10 @@ module.exports = class MiningPool {
      this.miningParams = await this.call("getParams", [], false);
    }
 
-   async update() {
+   async update(partialTarget) {
       const self = this;
       const result = await Retry("request work from the pool", async () => {
-         return self.call("requestTask");
+         return self.call("requestTask", [partialTarget]);
       }, "[Pool]");
       return result;
    }

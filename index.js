@@ -294,8 +294,12 @@ module.exports = class KoinosMiner {
       const previousNonce = nonce;
 
       if(this.miningPool) {
-         const { recipients, splitPercents, target, powHeight } = await this.miningPool.update();
-         this.sendMiningRequest(recipients, splitPercents, target, powHeight, previousNonce);
+         const respPool = await this.miningPool.update(this.difficultyStr);
+         if(this.poolStatsCallback && typeof this.poolStatsCallback === "function") {
+            this.poolStatsCallback(respPool);
+         }
+         const { recipients, splitPercents, target, powHeight, idTarget } = respPool;
+         this.sendMiningRequest(recipients, splitPercents, target, powHeight, idTarget, previousNonce);
       } else {
          const phk = this.getCurrentPHK();
          const [fromAddress, address, tipAddress, one_minus_ta, ta] = phk.split(",");
@@ -304,7 +308,7 @@ module.exports = class KoinosMiner {
          const powHeight = 1 + (await Retry("get pow height", async () => {
             return this.retrievePowHeight(fromAddress, recipients, splitPercents);
          }));
-         this.sendMiningRequest(recipients, splitPercents, this.difficultyStr, powHeight, previousNonce);
+         this.sendMiningRequest(recipients, splitPercents, this.difficultyStr, powHeight, "00", previousNonce);
       }
    }
 
@@ -332,14 +336,15 @@ module.exports = class KoinosMiner {
       ];
 
       if (this.miningPool) {
-         const respPool = await this.miningPool.sendProof(mineArgs);
          this.adjustDifficulty();
+         mineArgs.push(this.difficultyStr);
+         const respPool = await this.miningPool.sendProof(mineArgs);         
          this.startTime = Date.now();
          if(this.poolStatsCallback && typeof this.poolStatsCallback === "function") {
             this.poolStatsCallback(respPool);
          }
-         const { recipients, splitPercents, target, powHeight } = respPool;
-         this.sendMiningRequest(recipients, splitPercents, target, powHeight);
+         const { recipients, splitPercents, target, powHeight, idTarget } = respPool;
+         this.sendMiningRequest(recipients, splitPercents, target, powHeight, idTarget );
       } else {
          let gasPrice = Math.round(parseInt(await this.web3.eth.getGasPrice()) * this.gasMultiplier);
 
@@ -370,7 +375,7 @@ module.exports = class KoinosMiner {
          const powHeight = 1 + (await Retry("get pow height", async () => {
             return this.retrievePowHeight(fromAddress, recipients, splitPercents);
          }));
-         this.sendMiningRequest(recipients, splitPercents, this.difficultyStr, powHeight);
+         this.sendMiningRequest(recipients, splitPercents, this.difficultyStr, powHeight, "00");
       }
    }
 
@@ -401,12 +406,13 @@ module.exports = class KoinosMiner {
       this.startTime = Date.now();
       if (this.miningPool) {
          this.adjustDifficulty();
+         mineArgs.push(this.difficultyStr);
          const respPool = await this.miningPool.sendProof(mineArgs);
          if(this.poolStatsCallback && typeof this.poolStatsCallback === "function") {
             this.poolStatsCallback(respPool);
          }
-         const { recipients, splitPercents, target, powHeight } = respPool;
-         this.sendMiningRequest(recipients, splitPercents, target, powHeight, previousNonce);
+         const { recipients, splitPercents, target, powHeight, idTarget } = respPool;
+         this.sendMiningRequest(recipients, splitPercents, target, powHeight, idTarget, previousNonce);
       } else {
          const phk = this.getCurrentPHK();
          const [fromAddress, address, tipAddress, one_minus_ta, ta] = phk.split(",");
@@ -415,7 +421,7 @@ module.exports = class KoinosMiner {
          const powHeight = 1 + (await Retry("get pow height", async () => {
             return this.retrievePowHeight(fromAddress, recipients, splitPercents);
          }));
-         this.sendMiningRequest(recipients, splitPercents, this.difficultyStr, powHeight, previousNonce);
+         this.sendMiningRequest(recipients, splitPercents, this.difficultyStr, powHeight, "00", previousNonce);
       }
    }
 
@@ -489,7 +495,7 @@ module.exports = class KoinosMiner {
         await this.miningPool.login();
       }
       this.difficultyStr = hashString(this.difficulty);
-      this.sendMiningRequest(recipients, splitPercents, this.difficultyStr, powHeight);
+      this.sendMiningRequest(recipients, splitPercents, this.difficultyStr, powHeight, "00");
    }
 
    async start() {
@@ -643,7 +649,7 @@ module.exports = class KoinosMiner {
       return result;
    }
 
-   formatNonce(blockHash) {
+   formatNonce(idTarget, blockHash) {console.log("id target "+idTarget);
       let machine = "0";
       if(this.miningPool && this.miningPool.machine)
          machine = Number(this.miningPool.machine).toString(16);
@@ -655,7 +661,8 @@ module.exports = class KoinosMiner {
         tipAmount +
         machine +
         this.address.slice(2,7) +
-        "000000000000";
+        idTarget +
+        "0000000000";
 
       let n = BigInt(nonce);
       if(n >= BigInt(blockHash)) return nonce;
@@ -663,18 +670,20 @@ module.exports = class KoinosMiner {
       return hashString(n);
    }
 
-   getStartNonce(nonce) {
+   getStartNonce(idTarget, nonce) {
       if(!nonce || this.blockHashChanged) {
-         this.blockHashChanged = false;
-         return this.formatNonce(this.recentBlock.hash);
+         this.blockHashChanged = false;console.log("id target "+idTarget);
+         return this.formatNonce(idTarget, this.recentBlock.hash);
       } else {
-         return hashString(nonce + 1n);
+         let startNonce = hashString(nonce + 1n);
+         startNonce = startNonce.slice(0,54) + idTarget + startNonce.slice(56);
+         return startNonce;
       }
    }
 
-   async sendMiningRequest(recipients, splitPercents, difficulty, powHeight, previousNonce = null) {
+   async sendMiningRequest(recipients, splitPercents, difficulty, powHeight, idTarget, previousNonce = null) {
       const self = this;
-      this.hashes = 0;
+      this.hashes = 0;console.log("id target "+idTarget);
       this.miningQueue.sendRequest({
          recipients,
          splitPercents,
@@ -684,7 +693,7 @@ module.exports = class KoinosMiner {
          powHeight,
          threadIterations : Math.trunc(this.threadIterations),
          hashLimit : Math.trunc(this.hashLimit),
-         startNonce : this.getStartNonce(previousNonce),
+         startNonce : this.getStartNonce(idTarget, previousNonce),
       });
    }
 
