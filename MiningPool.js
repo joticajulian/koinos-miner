@@ -52,25 +52,36 @@ module.exports = class MiningPool {
    }
 
    async update(partialTarget) {
-      const self = this;
-      const result = await Retry("request work from the pool", async () => {
-         return self.call("requestTask", [partialTarget]);
-      }, "[Pool]");
-      return result;
+     const self = this;
+     const result = await Retry("request work from the pool", async (tries, e) => {
+       if(tries === 0) return self.call("requestTask", [partialTarget]);
+       if(e && e.error && e.error.message) {
+         if(e.error.message.includes("signature verification failed")) {
+           console.log("Forcing a login");
+           self.token = null;
+           return self.call("requestTask", [partialTarget]);
+         }
+       }
+       return self.call("requestTask", [partialTarget]);
+     }, "[Pool]");
+     return result;
    }
 
    async sendProof(mineArgs) {
      const self = this;
-     const [
-       recipients,
-       splitPercents,
-       blockNumber,
-       blockHash,
-       target,
-       powHeight,
-       nonce,
-     ] = mineArgs;
-     const result = await Retry("send proof to the pool", async (tries, errorMessage) => {
+     const result = await Retry("send proof to the pool", async (tries, e) => {
+       if(tries === 0) return self.call("mine", mineArgs);
+       if(e && e.error && e.error.message) {
+         if(e.error.message.includes("signature verification failed")) {
+           console.log("Forcing a login");
+           self.token = null;
+           return self.call("mine", mineArgs);
+         } else if (e.error.message.includes("Invalid task. Expected task")) {
+           console.log("Requesting a new task");
+           const partialTarget = mineArgs[mineArgs.length - 1];
+           return self.call("requestTask", [partialTarget]);
+         }
+       }
        return self.call("mine", mineArgs);
      }, "[Pool]");
      return result;
