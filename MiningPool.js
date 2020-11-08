@@ -70,7 +70,7 @@ module.exports = class MiningPool {
        powHeight,
        nonce,
      ] = mineArgs;
-     const result = await Retry("send proof to the pool", async () => {
+     const result = await Retry("send proof to the pool", async (tries, errorMessage) => {
        return self.call("mine", mineArgs);
      }, "[Pool]");
      return result;

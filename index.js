@@ -649,7 +649,7 @@ module.exports = class KoinosMiner {
       return result;
    }
 
-   formatNonce(idTarget, blockHash) {console.log("id target "+idTarget);
+   formatNonce(idTarget, blockHash) {
       let machine = "0";
       if(this.miningPool && this.miningPool.machine)
          machine = Number(this.miningPool.machine).toString(16);
@@ -672,7 +672,7 @@ module.exports = class KoinosMiner {
 
    getStartNonce(idTarget, nonce) {
       if(!nonce || this.blockHashChanged) {
-         this.blockHashChanged = false;console.log("id target "+idTarget);
+         this.blockHashChanged = false;
          return this.formatNonce(idTarget, this.recentBlock.hash);
       } else {
          let startNonce = hashString(nonce + 1n);
@@ -683,7 +683,7 @@ module.exports = class KoinosMiner {
 
    async sendMiningRequest(recipients, splitPercents, difficulty, powHeight, idTarget, previousNonce = null) {
       const self = this;
-      this.hashes = 0;console.log("id target "+idTarget);
+      this.hashes = 0;
       this.miningQueue.sendRequest({
          recipients,
          splitPercents,
