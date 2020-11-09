@@ -72,17 +72,19 @@ module.exports = class MiningPool {
      const result = await Retry("send proof to the pool", async (tries, e) => {
        if(tries === 0) return self.call("mine", mineArgs);
        if(e && e.error && e.error.message) {
-         if(e.error.message.includes("signature verification failed")) {
+         if(e.error.message.includes("Insuficient funds to operate in the pool") || e.error.message.includes("Proof received too early. Please send proofs each")) {
+           // continue trying to send a proof
+           return self.call("mine", mineArgs);
+         } else if(e.error.message.includes("signature verification failed")) {
            console.log("Forcing a login");
            self.token = null;
            return self.call("mine", mineArgs);
-         } else if (e.error.message.includes("Invalid task. Expected task") || e.error.message.includes("Invalid nonce format. Expected nonce format")) {
+         } else {
            console.log("Requesting a new task");
            const partialTarget = mineArgs[mineArgs.length - 1];
            return self.call("requestTask", [partialTarget]);
          }
        }
-       return self.call("mine", mineArgs);
      }, "[Pool]");
      return result;
    }
