@@ -76,7 +76,7 @@ module.exports = class MiningPool {
            console.log("Forcing a login");
            self.token = null;
            return self.call("mine", mineArgs);
-         } else if (e.error.message.includes("Invalid task. Expected task")) {
+         } else if (e.error.message.includes("Invalid task. Expected task") || e.error.message.includes("Invalid nonce format. Expected nonce format")) {
            console.log("Requesting a new task");
            const partialTarget = mineArgs[mineArgs.length - 1];
            return self.call("requestTask", [partialTarget]);
