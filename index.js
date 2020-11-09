@@ -96,12 +96,15 @@ module.exports = class KoinosMiner {
 
    constructor(address, tipAddresses, fromAddress, contractAddress, blockchainEndpoint, poolEndpoint, tipAmount, period, gasMultiplier, gasPriceLimit, signCallback, hashrateCallback, proofCallback, errorCallback, warningCallback, poolStatsCallback) {
       let self = this;
+      
+      this.tipAmount = Math.trunc(tipAmount * 100);
+      if(this.tipAmount !== 0 && this.tipAmount !== 500)
+        throw new Error("The tip must be 0% or 5%");
 
       this.address = address;
       this.machine = 0;
       this.tipAddresses = tipAddresses;
       this.web3 = new Web3( blockchainEndpoint );
-      this.tipAmount = Math.trunc(tipAmount * 100);
       this.proofPeriod = period;
       this.signCallback = signCallback;
       this.hashrateCallback = hashrateCallback;
