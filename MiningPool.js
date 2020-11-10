@@ -79,12 +79,11 @@ module.exports = class MiningPool {
            console.log("Forcing a login");
            self.token = null;
            return self.call("mine", mineArgs);
-         } else {
-           console.log("Requesting a new task");
-           const partialTarget = mineArgs[mineArgs.length - 1];
-           return self.call("requestTask", [partialTarget]);
          }
        }
+       console.log("Requesting a new task");
+       const partialTarget = mineArgs[mineArgs.length - 1];
+       return self.call("requestTask", [partialTarget]);
      }, "[Pool]");
      return result;
    }
