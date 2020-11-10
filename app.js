@@ -15,7 +15,7 @@ program
    .option('-l, --gas-price-limit <limit>', 'The maximum amount of gas to be spent on a proof submission', '1000000000000')
    .option('--import', 'Import a private key')
    .option('--export', 'Export a private key')
-   .option('--pool', 'Use mining pool')
+   .option('--no-pool', 'Not use a mining pool')
    .parse(process.argv);
 
 console.log(` _  __     _                   __  __ _`);
