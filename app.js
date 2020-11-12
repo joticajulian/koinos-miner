@@ -7,7 +7,7 @@ program
    .usage('[OPTIONS]...')
    .requiredOption('-a, --addr <addr>', 'An ethereum address')
    .option('-e, --endpoint <endpoint>', 'An ethereum endpoint', 'http://mining.koinos.io')
-   .option('-pe, --pool-endpoint <pool endpoint>', 'A mining pool endpoint', 'http://pool.koinos.club')
+   .option('-pe, --pool-endpoint <pool endpoint>', 'A mining pool endpoint', 'https://api.koinos.club')
    .option('-t, --tip <percent>', 'The percentage of mined coins to tip the developers', '5')
    .option('-p, --proof-period <seconds>', 'How often you want to submit a proof on average', '86400')
    .option('-k, --key-file <file>', 'AES encrypted file containing private key')
