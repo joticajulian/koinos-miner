@@ -582,7 +582,7 @@ module.exports = class KoinosMiner {
       ["N:", "P:", "F:"].forEach(v => {
         if(str.indexOf(v) !== -1) id = str.indexOf(v);
       });
-      const value = str.substring(id + 2, str.indexOf(";"));
+      const value = str.substring(id + 2, str.lastIndexOf(";"));
       return BigInt('0x' + value);
    }
 
