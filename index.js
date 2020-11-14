@@ -96,7 +96,7 @@ module.exports = class KoinosMiner {
 
    constructor(address, tipAddresses, fromAddress, contractAddress, blockchainEndpoint, poolEndpoint, tipAmount, period, gasMultiplier, gasPriceLimit, signCallback, hashrateCallback, proofCallback, errorCallback, warningCallback, poolStatsCallback) {
       let self = this;
-      
+
       this.tipAmount = Math.trunc(tipAmount * 100);
       if(this.tipAmount !== 0 && this.tipAmount !== 500)
         throw new Error("The tip must be 0% or 5%");
@@ -341,7 +341,7 @@ module.exports = class KoinosMiner {
       if (this.miningPool) {
          this.adjustDifficulty();
          mineArgs.push(this.difficultyStr);
-         const respPool = await this.miningPool.sendProof(mineArgs);         
+         const respPool = await this.miningPool.sendProof(mineArgs);
          this.startTime = Date.now();
          if(this.poolStatsCallback && typeof this.poolStatsCallback === "function") {
             this.poolStatsCallback(respPool);
@@ -455,15 +455,15 @@ module.exports = class KoinosMiner {
       this.miningQueue = new MiningRequestQueue(this.child.stdin);
       this.child.stdout.on('data', async function (data) {
          if ( self.isFinishedWithoutNonce(data) ) {
-            const lastNonce = BigInt('0x' + self.getValue(data));
+            const lastNonce = self.getValueNonce(data);
             await self.onRespFinished(self.miningQueue.popHead(), lastNonce);
          }
          else if ( self.isFinishedWithNonce(data) ) {
-            const nonce = BigInt('0x' + self.getValue(data));
+            const nonce = self.getValueNonce(data);
             await self.onRespNonce(self.miningQueue.popHead(), nonce);
          }
          else if ( self.isFinishedWithPartialNonce(data) ) {
-            const nonce = BigInt('0x' + self.getValue(data));
+            const nonce = self.getValueNonce(data);
             await self.onRespPartialNonce(self.miningQueue.popHead(), nonce);
          }
          else if ( self.isHashReport(data) ) {
@@ -489,10 +489,10 @@ module.exports = class KoinosMiner {
       const powHeight = 1 + (await Retry("get pow height", async () => {
          return this.retrievePowHeight(fromAddress, recipients, splitPercents);
       }));
-      
+
       /*
         The mining pool accepts any type of proof to calculate the hash rate of the miner.
-        And a temporary task is created. For this reason, the miner will start mining alone. 
+        And a temporary task is created. For this reason, the miner will start mining alone.
       */
       if(this.miningPool) {
         await this.miningPool.login();
@@ -576,24 +576,34 @@ module.exports = class KoinosMiner {
       return str.substring(2, str.indexOf(";"));
    }
 
+   getValueNonce(s) {
+      let str = s.toString();
+      let id = -1;
+      ["N:", "P:", "F:"].forEach(v => {
+        if(str.indexOf(v) !== -1) id = str.indexOf(v);
+      });
+      const value = str.substring(id + 2, str.indexOf(";"));
+      return BigInt('0x' + value);
+   }
+
    isFinishedWithoutNonce(s) {
       let str = s.toString();
-      return "F:" === str.substring(0, 2);
+      return str.includes("F:");
    }
 
    isFinishedWithNonce(s) {
       let str = s.toString();
-      return "N:" === str.substring(0, 2);
+      return str.includes("N:");
    }
 
    isFinishedWithPartialNonce(s) {
       let str = s.toString();
-      return "P:" === str.substring(0, 2);
+      return str.includes("P:");
    }
 
    isHashReport(s) {
       let str = s.toString();
-      return "H:" === str.substring(0,2);
+      return str.includes("H:");
    }
 
    updateHashrate(d_hashes, d_time) {
