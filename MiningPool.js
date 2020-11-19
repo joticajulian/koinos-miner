@@ -47,6 +47,7 @@ module.exports = class MiningPool {
      this.token = await this.call("login", [this.miner, this.proofPeriod, this.tip], false);
      const payload = jose.JWT.decode(this.token.accessToken);
      this.machine = payload.machine;
+     console.log(`Logged in: ${JSON.strigify(payload)}`);
      
      this.miningParams = await this.call("getParams", [], false);
    }
