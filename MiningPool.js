@@ -77,9 +77,10 @@ module.exports = class MiningPool {
            // continue trying to send a proof
            return self.call("mine", mineArgs);
          } else if(e.error.message.includes("signature verification failed") || e.error.message.includes("Invalid nonce format")) {
-           console.log("Forcing a login");
+           console.log("Forcing a login and then request task");
            self.token = null;
-           return self.call("mine", mineArgs);
+           const partialTarget = mineArgs[mineArgs.length - 1];
+           return self.call("requestTask", [partialTarget]);
          }
        }
        console.log("Requesting a new task");
