@@ -7,6 +7,7 @@ program
    .usage('[OPTIONS]...')
    .requiredOption('-a, --addr <addr>', 'An ethereum address')
    .option('-e, --endpoint <endpoint>', 'An ethereum endpoint', 'http://mining.koinos.io')
+   .option('-pe, --pool-endpoint <pool endpoint>', 'A mining pool endpoint', 'https://api.koinos.club')
    .option('-t, --tip <percent>', 'The percentage of mined coins to tip the developers', '5')
    .option('-p, --proof-period <seconds>', 'How often you want to submit a proof on average', '86400')
    .option('-k, --key-file <file>', 'AES encrypted file containing private key')
@@ -14,6 +15,7 @@ program
    .option('-l, --gas-price-limit <limit>', 'The maximum amount of gas to be spent on a proof submission', '1000000000000')
    .option('--import', 'Import a private key')
    .option('--export', 'Export a private key')
+   .option('--no-pool', 'Not use a mining pool')
    .parse(process.argv);
 
 console.log(` _  __     _                   __  __ _`);
@@ -84,6 +86,12 @@ let signCallback = async function(web3, txData)
    return (await web3.eth.accounts.signTransaction(txData, account.privateKey)).rawTransaction;
 }
 
+let poolStatsCallback = function(responsePool)
+{
+   console.log(`[JS](app.js) Hashrate detected by the pool:`);// ${KoinosMiner.formatHashRate(responsePool.hashRate)}`);
+   console.log(responsePool);
+}
+
 function enterPassword()
 {
    return readlineSync.questionNewPassword('Enter password for encryption: ', {mask: ''});
@@ -124,7 +132,11 @@ function decrypt(cipherText, password)
    return decrypted
 }
 
-if (program.import)
+if (program.pool)
+{
+   console.log('Using mining pool: ' + program.poolEndpoint);
+}
+else if (program.import)
 {
    account = w3.eth.accounts.privateKeyToAccount(
       readlineSync.questionNewPassword('Enter private key: ', {
@@ -183,9 +195,10 @@ else
 var miner = new KoinosMiner(
    program.addr,
    tip_addresses,
-   account.address,
+   program.pool ? "0x0000000000000000000000000000000000000000" : account.address,
    contract_address,
    program.endpoint,
+   program.pool ? program.poolEndpoint : null,
    program.tip,
    program.proofPeriod,
    program.gasMultiplier,
@@ -194,6 +207,7 @@ var miner = new KoinosMiner(
    hashrateCallback,
    proofCallback,
    errorCallback,
-   warningCallback);
+   warningCallback,
+   poolStatsCallback);
 
 miner.start();

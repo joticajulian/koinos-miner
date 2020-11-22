@@ -1,19 +1,30 @@
 const { sleep } = require("./looper");
 
-async function retry(msg, fn) {
+async function retry(msg, fn, context = "[JS]") {
     let tries = 0;
+    let sleepTime = 200;
+    let MAX_SLEEP_TIME = 60000;
+    let error = null;
+
     while (true) {
         try {
-            return await fn();
+            if( tries > 0 ) {
+               console.log(`${context} Attempting to ${msg} (${tries} failed attempts)`);
+            }
+            return await fn(tries, error);
         }
         catch (e) {
-            let sleepTime = 60000;
-            if (tries < 10) {
-                sleepTime = Math.pow(2, tries) * 100;
-                tries++;
+            console.log(`${context} Error with ${msg}`);
+            if(e.response && e.response.data) {
+              console.log(e.response.data);
+              error = e.response.data;
+            } else {
+              console.log(e.message);
+              error = e.message;
             }
-            console.log('[JS] Attempting to ' + msg );
-            await sleep(sleepTime);
+            ++tries;
+            await sleep( (0.75 + 0.25*Math.random()) * sleepTime );
+            sleepTime = Math.min( sleepTime*2, MAX_SLEEP_TIME );
         }
     }
 }
