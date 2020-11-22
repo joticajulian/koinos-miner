@@ -7,7 +7,6 @@
   - [Dependencies](#dependencies)
   - [Installation](#installation)
   - [Getting Started](#getting-started)
-  - [Key Management](#key-management)
   - [Example Run](#example-run)
   - [FAQ](#FAQ)
 
