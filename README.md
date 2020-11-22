@@ -1,4 +1,4 @@
-![Koinos Miner](assets/images/koinos-pool-cli-miner-banner.png)
+![Koinos Miner](assets/images/koinos-pool-cli-miner.png)
 
 [![GitHub Issues](https://img.shields.io/github/issues/open-orchard/koinos-miner.svg)](https://github.com/joticajulian/koinos-miner/issues)
 [![GitHub License](https://img.shields.io/badge/license-GPLv3-blue.svg)](https://github.com/joticajulian/koinos-miner/blob/master/LICENSE.md)
