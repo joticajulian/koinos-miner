@@ -311,7 +311,7 @@ module.exports = class KoinosMiner {
          const powHeight = 1 + (await Retry("get pow height", async () => {
             return this.retrievePowHeight(fromAddress, recipients, splitPercents);
          }));
-         this.sendMiningRequest(recipients, splitPercents, this.difficultyStr, powHeight, "00", previousNonce);
+         this.sendMiningRequest(recipients, splitPercents, this.difficultyStr, powHeight, "00000", previousNonce);
       }
    }
 
@@ -378,7 +378,7 @@ module.exports = class KoinosMiner {
          const powHeight = 1 + (await Retry("get pow height", async () => {
             return this.retrievePowHeight(fromAddress, recipients, splitPercents);
          }));
-         this.sendMiningRequest(recipients, splitPercents, this.difficultyStr, powHeight, "00");
+         this.sendMiningRequest(recipients, splitPercents, this.difficultyStr, powHeight, "00000");
       }
    }
 
@@ -424,7 +424,7 @@ module.exports = class KoinosMiner {
          const powHeight = 1 + (await Retry("get pow height", async () => {
             return this.retrievePowHeight(fromAddress, recipients, splitPercents);
          }));
-         this.sendMiningRequest(recipients, splitPercents, this.difficultyStr, powHeight, "00", previousNonce);
+         this.sendMiningRequest(recipients, splitPercents, this.difficultyStr, powHeight, "00000", previousNonce);
       }
    }
 
@@ -498,7 +498,7 @@ module.exports = class KoinosMiner {
         await this.miningPool.login();
       }
       this.difficultyStr = hashString(this.difficulty);
-      this.sendMiningRequest(recipients, splitPercents, this.difficultyStr, powHeight, "00");
+      this.sendMiningRequest(recipients, splitPercents, this.difficultyStr, powHeight, "00000");
    }
 
    async start() {
