@@ -670,7 +670,7 @@ module.exports = class KoinosMiner {
       const tipAmount = this.tipAmount === 500 ? "f" : "0";
 
       const nonce =
-        blockHash.slice(0,46) +
+        blockHash.slice(0,43) +
         tipAmount +
         machine +
         this.address.slice(2,7) +
@@ -679,7 +679,7 @@ module.exports = class KoinosMiner {
 
       let n = BigInt(nonce);
       if(n >= BigInt(blockHash)) return nonce;
-      n += (1n << 80n);
+      n += (1n << 92n);
       return hashString(n);
    }
 
@@ -689,7 +689,7 @@ module.exports = class KoinosMiner {
          return this.formatNonce(idTarget, this.recentBlock.hash);
       } else {
          let startNonce = hashString(nonce + 1n);
-         startNonce = startNonce.slice(0,54) + idTarget + startNonce.slice(56);
+         startNonce = startNonce.slice(0,51) + idTarget + startNonce.slice(56);
          return startNonce;
       }
    }
