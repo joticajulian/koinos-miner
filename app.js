@@ -14,7 +14,7 @@ program
 console.log(`
               ____  __.     .__
               |    |/ _|____ |__| ____   ____  ______
-              |      < /  _ \|  |/    \ /  _ \/  ___/
+              |      < /  _ \\|  |/   \\ /  _ \\/  ___/
               |    |  (  <_> )  |   |  (  <_> )___ \
               |____|__ \____/|__|___|  /\____/____  >
                       \/             \/           \/
@@ -36,7 +36,7 @@ const callbacks = {
     console.log(`[JS](app.js) Error: `, error)
   },
   hashrate: (h) => {
-    console.log(`[JS](app.js) Hashrate: ${formatHashrate(h)}`)
+    console.log(`[JS](app.js) Hashrate: ${h}`)
   },
   proof: (k) => {
     console.log(`[JS](app.js) Reward: ${k.toFixed(8)} WKOINS mined!!`)
