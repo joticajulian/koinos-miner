@@ -151,7 +151,7 @@ module.exports = class KoinosMiner {
       this.lastProof = this.endTime;
 
       this.adjustDifficulty();
-      const respTask = await this.miningPool.sendProof(nonce, req.taskId, this.difficultyStr);
+      const respTask = await this.miningPool.sendProof(nonce, this.difficultyStr);
       if(this.proofCallback) this.proofCallback(respTask.wkoins);
       this.sendMiningRequest(respTask);
    }

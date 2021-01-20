@@ -12,18 +12,16 @@ program
    .parse(process.argv);
 
 console.log(`
-              ____  __.     .__
-              |    |/ _|____ |__| ____   ____  ______
-              |      < /  _ \\|  |/   \\ /  _ \\/  ___/
-              |    |  (  <_> )  |   |  (  <_> )___ \
-              |____|__ \____/|__|___|  /\____/____  >
-                      \/             \/           \/
-   _____  .__       .__                 __________             .__
-  /     \ |__| ____ |__| ____    ____   \______   \____   ____ |  |
- /  \ /  \|  |/    \|  |/    \  / ___\   |     ___/  _ \ /  _ \|  |
-/    Y    \  |   |  \  |   |  \/ /_/  >  |    |  (  <_> |  <_> )  |__
-\____|__  /__|___|  /__|___|  /\___  /   |____|   \____/ \____/|____/
-        \/        \/        \//_____/
+              88  dP  dP"Yb  88 88b 88  dP"Yb  .dP"Y8
+              88odP  dP   Yb 88 88Yb88 dP   Yb 'Ybo."
+              88"Yb  Yb   dP 88 88 Y88 Yb   dP o.'Y8b
+              88  Yb  YbodP  88 88  Y8  YbodP  8bodP'
+
+8b    d8 88 88b 88 88 88b 88  dP""b8     88""Yb  dP"Yb   dP"Yb  88
+88b  d88 88 88Yb88 88 88Yb88 dP   '"     88__dP dP   Yb dP   Yb 88
+88YbdP88 88 88 Y88 88 88 Y88 Yb  "88     88"""  Yb   dP Yb   dP 88  .o
+88 YY 88 88 88  Y8 88 88  Y8  YboodP     88      YbodP   YbodP  88ood8
+
 
 [JS](app.js) Mining with the following arguments:
 [JS](app.js) Hive user: @${program.user}

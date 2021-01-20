@@ -35,10 +35,10 @@ module.exports = class MiningPool {
      return result;
    }
 
-   async sendProof(nonce, taskId, newTarget) {
+   async sendProof(nonce, newTarget) {
      const self = this;
      const result = await Retry("send proof to the pool", async (tries, e) => {
-       return self.call("mine", [this.user, taskId, nonce, newTarget]);
+       return self.call("mine", [nonce, newTarget]);
      }, "[Pool]");
      return result;
    }
