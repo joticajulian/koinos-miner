@@ -30,7 +30,7 @@ module.exports = class MiningPool {
    async requestTask(target) {
      const self = this;
      const result = await Retry("request work from the pool", async () => {
-       return self.call("requestTask", [this.user, target]);
+       return self.call("requestTask2", [this.user, target]);
      }, "[Pool]");
      return result;
    }
@@ -38,7 +38,7 @@ module.exports = class MiningPool {
    async sendProof(nonce, newTarget) {
      const self = this;
      const result = await Retry("send proof to the pool", async (tries, e) => {
-       return self.call("mine", [nonce, newTarget]);
+       return self.call("mine2", [nonce, newTarget]);
      }, "[Pool]");
      return result;
    }
