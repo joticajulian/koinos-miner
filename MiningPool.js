@@ -3,7 +3,7 @@ const Retry = require("./retry.js");
 
 module.exports = class MiningPool {
    constructor(endpoint, user) {
-      this.user = user;
+      this.user = user.trim();
       this.axios = axios.create({
          baseURL: endpoint
       });
@@ -38,7 +38,11 @@ module.exports = class MiningPool {
    async sendProof(nonce, newTarget) {
      const self = this;
      const result = await Retry("send proof to the pool", async (tries, e) => {
-       return self.call("mine2", [nonce, newTarget]);
+       if(tries < 3)
+          return self.call("mine2", [nonce, newTarget]);
+
+       console.log("Aborting... requesting a new task");
+       self.call("requestTask2", [this.user, newTarget]);
      }, "[Pool]");
      return result;
    }

@@ -52,11 +52,6 @@ class MiningRequestQueue {
    }
 
    sendRequest(req) {
-      console.log( "[JS] Seed:             " + req.seed );
-      console.log( "[JS] Secured hash:     " + req.securedHash );
-      console.log( "[JS] Partial Target Difficulty: " + req.partialTarget );
-      console.log( "[JS] Start nonce:      " + req.iniNonce);
-
       this.reqStream.write(
          req.seed + " " +
          req.securedHash + " " +
@@ -89,6 +84,8 @@ module.exports = class KoinosMiner {
    lastProof = Date.now();
    hashes = 0;
    hashRate = 0;
+   recentMinedHistory = [];
+   recentMined = 0;
    child = null;
 
    constructor(user, proofPeriod, poolEndpoint, callbacks ) {
@@ -134,6 +131,14 @@ module.exports = class KoinosMiner {
       this.hashLimit = this.hashRate * 60 * 1; // Hashes for 1 minute
    }
 
+   updateRecentMinedKoins(wkoins) {
+      this.recentMinedHistory.push([Date.now(), wkoins]);
+      const yesterday = Date.now() - 24 * 60 * 60 * 1000;
+      const index = this.recentMinedHistory.findIndex(r => r[0] > yesterday);
+      this.recentMinedHistory.splice(0, index);
+      this.recentMined = this.recentMinedHistory.reduce((total, m) => (total + m[1]), 0);
+   }
+
    async onRespFinished() {
       console.log("[JS] Finished without nonce");
       this.endTime = Date.now();
@@ -152,7 +157,10 @@ module.exports = class KoinosMiner {
 
       this.adjustDifficulty();
       const respTask = await this.miningPool.sendProof(nonce, this.difficultyStr);
-      if(this.proofCallback) this.proofCallback(respTask.wkoins);
+      if(respTask.wkoins) {
+         this.updateRecentMinedKoins(respTask.wkoins);
+         if(this.proofCallback) this.proofCallback(respTask.wkoins, this.recentMined);
+      }
       this.sendMiningRequest(respTask);
    }
 
@@ -177,6 +185,7 @@ module.exports = class KoinosMiner {
    }
 
    async sendMiningRequest(req) {
+      console.log(`[JS] New task received. Task Id: ${req.nonce.iniNonce.slice(46, 52)}`);
       this.hashes = 0;
       this.miningQueue.sendRequest({
          ...req,

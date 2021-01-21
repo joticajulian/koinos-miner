@@ -36,8 +36,15 @@ const callbacks = {
   hashrate: (h) => {
     console.log(`[JS](app.js) Hashrate: ${h}`)
   },
-  proof: (k) => {
-    console.log(`[JS](app.js) Reward: ${k.toFixed(8)} WKOINS mined!!`)
+  proof: (k, totalToday) => {
+     console.log(`
+[JS](app.js) ***************************************************
+             CONGRATULATIONS @${program.user}!
+             You earned ${k.toFixed(8)} WKOINS
+
+             Total earned in the last 24h: ${totalToday.toFixed(8)} WKOINS
+             ***************************************************
+`)
   },
 };
 
