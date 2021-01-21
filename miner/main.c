@@ -140,10 +140,10 @@ void read_data(struct input_data *d)
           &d->thread_iterations,
           &d->hash_limit);
 
-   fprintf(stderr, "[C] Seed: %s\n", d->seed_str);
+   fprintf(stderr, "[C] Seed:         %s\n", d->seed_str);
    fprintf(stderr, "[C] Secured hash: %s\n", d->secured_hash_str);
-   fprintf(stderr, "[C] Difficulty: %s\n", d->target_str);
-   fprintf(stderr, "[C] Start Nonce: %s\n", d->start_nonce_str);
+   fprintf(stderr, "[C] Difficulty:   %s\n", d->target_str);
+   fprintf(stderr, "[C] Start Nonce:  %s\n", d->start_nonce_str);
    fprintf(stderr, "[C] Thread Iterations: %" PRIu64 "\n", d->thread_iterations);
    fprintf(stderr, "[C] Hash Limit: %" PRIu64 "\n", d->hash_limit);
    fflush(stderr);
@@ -261,25 +261,9 @@ int main(int argc, char **argv)
       bignum_from_string(&target, input.target_str + 2, ETH_HASH_SIZE - 2);
       bignum_from_string(&start_nonce, input.start_nonce_str + 2, ETH_HASH_SIZE - 2);
 
-      bignum_to_string(&seed, bn_str, sizeof(bn_str), true);
-      fprintf(stderr, "[C] Seed: %s\n", bn_str);
-      bignum_to_string(&secured_hash, bn_str, sizeof(bn_str), true);
-      fprintf(stderr, "[C] Secured Struct Hash: %s\n", bn_str);
-      bignum_to_string(&target, bn_str, sizeof(bn_str), true);
-      fprintf(stderr, "[C] Target: %s\n", bn_str);
-      bignum_to_string(&start_nonce, bn_str, sizeof(bn_str), true);
-      fprintf(stderr, "[C] Start nonce: %s\n", bn_str);
-
-      struct bn nonce;
-      bignum_endian_swap(&start_nonce);
-      bignum_assign(&nonce, &start_nonce);
-      bignum_endian_swap(&nonce);
-
-      bignum_to_string(&nonce, bn_str, sizeof(bn_str), true);
-      fprintf(stderr, "[C] Starting Nonce: %s\n", bn_str);
-
       // Procedurally generate word buffer w[i] from a seed
       // Each word buffer element is computed by w[i] = H(seed, i)
+      bignum_endian_swap(&seed);
       for (unsigned long i = 0; i < WORD_BUFFER_LENGTH; i++)
       {
          keccak_init(&c);
@@ -291,9 +275,11 @@ int main(int argc, char **argv)
          bignum_endian_swap(word_buffer + i);
       }
 
-      struct bn result, t_nonce, t_result, s_nonce;
+      struct bn nonce, t_nonce, s_nonce;
+      struct bn result, t_result;
       bool stop = false;
 
+      bignum_assign(&nonce, &start_nonce);
       bignum_assign(&s_nonce, &nonce);
       uint32_t hash_report_counter = 0;
       time_t timer;
@@ -382,8 +368,6 @@ int main(int argc, char **argv)
          bignum_to_string(&nonce, bn_str, sizeof(bn_str), false);
          fprintf(stdout, "N:%s;\n", bn_str);
          fprintf(stderr, "[C] Nonce: %s\n", bn_str);
-         bignum_to_string(&result, bn_str, sizeof(bn_str), false);
-         fprintf(stderr, "[C] Result: %s\n", bn_str);
          fflush(stderr);
       }
 

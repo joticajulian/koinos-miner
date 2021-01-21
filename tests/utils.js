@@ -1,4 +1,4 @@
-const ethers = require("ethers");
+const { ethers } = require("ethers");
 
 function uint256ToString(i) {
    let iStr = i.toString(16);
