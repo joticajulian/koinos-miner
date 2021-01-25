@@ -93,8 +93,17 @@ A simple example of running the miner:
 You can run the miner using docker. Image size optimized to 250 MB:
 
 ```
-docker run koinclub/miner:latest
+docker run koinclub/miner:latest -u HIVE_USER
 ```
+Additional docker flags that can be useful
+
+```
+--cpus XX [Specify the amount of CPUs to use for this container
+--proof-period [How often you want to submit a proof on average (default: "60")]
+--name [Specify name of container]
+```
+
+
 
 # FAQ
 
