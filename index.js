@@ -16,7 +16,7 @@ function getNonceValue(s) {
    const str = s.toString();
    const id = str.indexOf("N:");
    const value = str.substring(id + 2, str.lastIndexOf(";"));
-   return "0x" + value;
+   return "0x" + "0".repeat(64 - value.length) + value;
 }
 
 function getHashReportValue(s) {
@@ -185,7 +185,7 @@ module.exports = class KoinosMiner {
    }
 
    async sendMiningRequest(req) {
-      console.log(`[JS] New task received. Task Id: ${req.nonce.iniNonce.slice(46, 52)}`);
+      console.log(`[JS] New task received. Task Id: ${req.iniNonce.slice(46, 52)}`);
       this.hashes = 0;
       this.miningQueue.sendRequest({
          ...req,
