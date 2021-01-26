@@ -42,7 +42,7 @@ module.exports = class MiningPool {
           return self.call("mine2", [nonce, newTarget]);
 
        console.log("Aborting... requesting a new task");
-       self.call("requestTask2", [this.user, newTarget]);
+       return self.call("requestTask2", [this.user, newTarget]);
      }, "[Pool]");
      return result;
    }
