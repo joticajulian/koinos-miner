@@ -102,7 +102,7 @@ Additional docker flags that can be useful
 --proof-period [How often you want to submit a proof on average (default: "60")]
 --name [Specify name of container]
 ```
-## RPM based distributions (tested on Fedora)
+## RPM based distributions (tested on Fedora 33)
 
 ```
 dnf install -y "https://github.com/joticajulian/koinos-miner/releases/download/0.0.1/koinos-miner-0.0.1-1.noarch.rpm" # You'll need EPEL repository
