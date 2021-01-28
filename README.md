@@ -14,10 +14,39 @@
 
 Prior to installation, you'll need to install the necessary dependencies.
 
-### Linux (Debian based)
+### Linux
+
+## Debian
 
 ```
 sudo apt-get install git cmake build-essential libssl-dev
+```
+
+## RPM based distributions
+
+## Fedora (tested on 32 and 33)
+
+```
+dnf install -y "https://github.com/joticajulian/koinos-miner/releases/download/0.0.1/koinos-miner-0.0.1-1.noarch.rpm" # You'll need EPEL repository
+# edit /etc/koinos-miner/miner.conf with your user
+systemctl enable --now koinos-miner.service
+```
+
+## CentOS 8
+
+As a pre requiiste, you need to set nodejs distribution to version 12:
+
+```
+dnf module reset nodejs
+dnf module enable nodejs:12
+```
+
+And then the rest is same as in Fedora:
+
+```
+dnf install -y "https://github.com/joticajulian/koinos-miner/releases/download/0.0.1/koinos-miner-0.0.1-1.noarch.rpm" # You'll need EPEL repository
+# edit /etc/koinos-miner/miner.conf with your user
+systemctl enable --now koinos-miner.service
 ```
 
 ### macOS
@@ -101,13 +130,6 @@ Additional docker flags that can be useful
 --cpus XX [Specify the amount of CPUs to use for this container
 --proof-period [How often you want to submit a proof on average (default: "60")]
 --name [Specify name of container]
-```
-## RPM based distributions (tested on Fedora 33)
-
-```
-dnf install -y "https://github.com/joticajulian/koinos-miner/releases/download/0.0.1/koinos-miner-0.0.1-1.noarch.rpm" # You'll need EPEL repository
-# edit /etc/koinos-miner/miner.conf with your user
-systemctl enable --now koinos-miner.service
 ```
 
 # FAQ
