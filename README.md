@@ -22,33 +22,6 @@ Prior to installation, you'll need to install the necessary dependencies.
 sudo apt-get install git cmake build-essential libssl-dev
 ```
 
-## RPM based distributions
-
-## Fedora (tested on 32 and 33)
-
-```
-dnf install -y "https://github.com/joticajulian/koinos-miner/releases/download/0.0.1/koinos-miner-0.0.1-1.noarch.rpm" # You'll need EPEL repository
-# edit /etc/koinos-miner/miner.conf with your user
-systemctl enable --now koinos-miner.service
-```
-
-## CentOS 8
-
-As a pre requiiste, you need to set nodejs distribution to version 12:
-
-```
-dnf module reset nodejs
-dnf module enable nodejs:12
-```
-
-And then the rest is same as in Fedora:
-
-```
-dnf install -y "https://github.com/joticajulian/koinos-miner/releases/download/0.0.1/koinos-miner-0.0.1-1.noarch.rpm" # You'll need EPEL repository
-# edit /etc/koinos-miner/miner.conf with your user
-systemctl enable --now koinos-miner.service
-```
-
 ### macOS
 
 On macOS, installing `gcc` is required to support OpenMP parallelization. Using the `brew` package manager, install OpenSSL and gcc.
@@ -76,6 +49,34 @@ For macOS, you will need to specify the C compiler as `gcc`.
 
 ```
 CC=gcc-10 npm install
+```
+## RPM based distributions
+
+There is an all in one solution for RPM based distributions, that supply all the dependencies and the miner, as well as a sonfiguration file and systemd service.
+
+## Fedora (tested on 32 and 33)
+
+```
+dnf install -y "https://github.com/joticajulian/koinos-miner/releases/download/0.0.1/koinos-miner-0.0.1-1.noarch.rpm" # You'll need EPEL repository
+# edit /etc/koinos-miner/miner.conf with your user
+systemctl enable --now koinos-miner.service
+```
+
+## CentOS 8
+
+As a pre requiiste, you need to set nodejs distribution to version 12:
+
+```
+dnf module reset nodejs
+dnf module enable nodejs:12
+```
+
+And then the rest is same as in Fedora:
+
+```
+dnf install -y "https://github.com/joticajulian/koinos-miner/releases/download/0.0.1/koinos-miner-0.0.1-1.noarch.rpm" # You'll need EPEL repository
+# edit /etc/koinos-miner/miner.conf with your user
+systemctl enable --now koinos-miner.service
 ```
 
 ## Getting started
