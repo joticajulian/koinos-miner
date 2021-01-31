@@ -43,6 +43,7 @@ For both Windows and Linux, you should be able to simply invoke the standard `np
 
 ```
 npm install
+npm run postinstall
 ```
 
 For macOS, you will need to specify the C compiler as `gcc`.
@@ -115,7 +116,7 @@ Options:
 A simple example of running the miner:
 
 ```
-❯ npm start -u jga
+❯ npm start -- -u jga
 ```
 
 ## Docker
